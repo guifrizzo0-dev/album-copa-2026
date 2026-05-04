@@ -278,9 +278,15 @@ function AlbumSelector({ session, albums, onSelect, onCreateAlbum, onJoinAlbum, 
   const deleteAlbum = async (album) => {
     setLoading(true); setError('');
     try {
-      await supabase.from('stickers').delete().eq('album_id', album.id);
-      await supabase.from('album_members').delete().eq('album_id', album.id);
-      await supabase.from('albums').delete().eq('id', album.id);
+      const r1 = await supabase.from('stickers').delete().eq('album_id', album.id);
+      if (r1.error) throw new Error('Erro ao apagar figurinhas: ' + r1.error.message);
+
+      const r2 = await supabase.from('album_members').delete().eq('album_id', album.id);
+      if (r2.error) throw new Error('Erro ao apagar membros: ' + r2.error.message);
+
+      const r3 = await supabase.from('albums').delete().eq('id', album.id);
+      if (r3.error) throw new Error('Erro ao apagar álbum: ' + r3.error.message);
+
       setConfirmDelete(null);
       onDeleteAlbum(album.id);
     } catch (e) { setError(e.message); }
