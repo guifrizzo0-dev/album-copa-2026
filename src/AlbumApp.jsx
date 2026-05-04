@@ -193,6 +193,7 @@ function LoginScreen() {
   const [isRegister, setIsRegister] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [registered, setRegistered] = useState(false);
 
   const handle = async () => {
     if (!email || !password) { setError('Preencha email e senha.'); return; }
@@ -201,6 +202,7 @@ function LoginScreen() {
       if (isRegister) {
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
+        setRegistered(true);
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -208,6 +210,31 @@ function LoginScreen() {
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
   };
+
+  if (registered) {
+    return (
+      <div style={ls.wrap}>
+        <div style={ls.card}>
+          <div style={ls.eyebrow}>FIFA WORLD CUP 2026™</div>
+          <h1 style={ls.title}>Álbum Panini</h1>
+          <div style={{ textAlign: 'center', padding: '8px 0' }}>
+            <div style={{ fontSize: '48px', marginBottom: '12px' }}>📧</div>
+            <p style={{ fontWeight: 700, fontSize: '16px', color: '#1a1a1a', margin: '0 0 8px' }}>Confirme seu e-mail</p>
+            <p style={{ fontSize: '14px', color: '#666', margin: '0 0 4px', lineHeight: 1.6 }}>
+              Enviamos um link de confirmação para:
+            </p>
+            <p style={{ fontWeight: 700, color: '#003a70', fontSize: '14px', margin: '0 0 16px', wordBreak: 'break-all' }}>{email}</p>
+            <p style={{ fontSize: '13px', color: '#888', margin: 0, lineHeight: 1.6 }}>
+              Acesse seu e-mail e clique no link para ativar sua conta. Após confirmar, volte aqui para entrar.
+            </p>
+          </div>
+          <button onClick={() => { setRegistered(false); setIsRegister(false); setPassword(''); }} style={ls.btn}>
+            Ir para o login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={ls.wrap}>
