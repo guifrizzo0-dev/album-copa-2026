@@ -267,12 +267,25 @@ const ls = {
 };
 
 // ─── Seleção de Álbum ─────────────────────────────────────────────────────────
-function AlbumSelector({ session, albums, onSelect, onCreateAlbum, onJoinAlbum }) {
+function AlbumSelector({ session, albums, onSelect, onCreateAlbum, onJoinAlbum, onDeleteAlbum }) {
   const [mode, setMode] = useState(null); // 'create' | 'join'
   const [albumName, setAlbumName] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(null); // album a excluir
+
+  const deleteAlbum = async (album) => {
+    setLoading(true); setError('');
+    try {
+      await supabase.from('stickers').delete().eq('album_id', album.id);
+      await supabase.from('album_members').delete().eq('album_id', album.id);
+      await supabase.from('albums').delete().eq('id', album.id);
+      setConfirmDelete(null);
+      onDeleteAlbum(album.id);
+    } catch (e) { setError(e.message); }
+    finally { setLoading(false); }
+  };
 
   const createAlbum = async () => {
     if (!albumName.trim()) { setError('Digite um nome para o álbum.'); return; }
@@ -310,15 +323,42 @@ function AlbumSelector({ session, albums, onSelect, onCreateAlbum, onJoinAlbum }
         <h1 style={ls.title}>Meus Álbuns</h1>
         <p style={{ fontSize: '12px', color: '#888', textAlign: 'center', margin: 0 }}>{session.user.email}</p>
 
+        {/* Modal de confirmação de exclusão */}
+        {confirmDelete && (
+          <div style={{ background: '#fff3f3', border: '1.5px solid #fca5a5', borderRadius: '12px', padding: '18px 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <p style={{ margin: 0, fontWeight: 700, fontSize: '15px', color: '#c5331a' }}>🗑️ Excluir álbum?</p>
+            <p style={{ margin: 0, fontSize: '13px', color: '#555', lineHeight: 1.5 }}>
+              Tem certeza que deseja excluir <strong>"{confirmDelete.name}"</strong>? Todas as figurinhas serão apagadas permanentemente. Essa ação não pode ser desfeita.
+            </p>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={() => deleteAlbum(confirmDelete)} disabled={loading}
+                style={{ ...ls.btn, background: '#c5331a', flex: 1, fontSize: '14px', padding: '10px' }}>
+                {loading ? 'Excluindo...' : 'Sim, excluir'}
+              </button>
+              <button onClick={() => setConfirmDelete(null)}
+                style={{ ...ls.btn, background: '#e5e1d8', color: '#333', flex: 1, fontSize: '14px', padding: '10px' }}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+
         {albums.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <p style={{ fontSize: '12px', color: '#888', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>Selecione um álbum</p>
             {albums.map(album => (
-              <button key={album.id} onClick={() => onSelect(album)}
-                style={{ padding: '14px 16px', background: '#f4f1ea', border: '2px solid #e5e1d8', borderRadius: '10px', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', transition: 'border-color 0.15s' }}>
-                <div style={{ fontWeight: 700, fontSize: '15px', color: '#1a1a1a' }}>📋 {album.name}</div>
-                <div style={{ fontSize: '12px', color: '#888', marginTop: '3px', fontFamily: 'monospace', letterSpacing: '1px' }}>Código: <strong>{album.invite_code}</strong></div>
-              </button>
+              <div key={album.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button onClick={() => onSelect(album)}
+                  style={{ flex: 1, padding: '14px 16px', background: '#f4f1ea', border: '2px solid #e5e1d8', borderRadius: '10px', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', transition: 'border-color 0.15s' }}>
+                  <div style={{ fontWeight: 700, fontSize: '15px', color: '#1a1a1a' }}>📋 {album.name}</div>
+                  <div style={{ fontSize: '12px', color: '#888', marginTop: '3px', fontFamily: 'monospace', letterSpacing: '1px' }}>Código: <strong>{album.invite_code}</strong></div>
+                </button>
+                <button onClick={() => setConfirmDelete(album)}
+                  title="Excluir álbum"
+                  style={{ padding: '10px 12px', background: 'transparent', border: '2px solid #fca5a5', borderRadius: '10px', cursor: 'pointer', color: '#c5331a', fontSize: '16px', flexShrink: 0 }}>
+                  🗑️
+                </button>
+              </div>
             ))}
           </div>
         )}
@@ -563,6 +603,7 @@ export default function AlbumApp() {
     <AlbumSelector session={session} albums={albums} onSelect={selectAlbum}
       onCreateAlbum={async (album) => { await loadAlbums(); selectAlbum(album); }}
       onJoinAlbum={async (album) => { await loadAlbums(); selectAlbum(album); }}
+      onDeleteAlbum={async () => { await loadAlbums(); }}
     />
   );
 
