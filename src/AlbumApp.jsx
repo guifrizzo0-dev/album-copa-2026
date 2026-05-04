@@ -426,6 +426,7 @@ export default function AlbumApp() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    if (window.twemoji) twemoji.parse(document.body, { folder: 'svg', ext: '.svg' });
     return () => subscription.unsubscribe();
   }, []);
 
