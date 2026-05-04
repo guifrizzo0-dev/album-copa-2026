@@ -4,6 +4,58 @@ import { supabase } from './supabaseClient';
 
 const STICKERS_PER_TEAM = 20;
 
+// ─── Hook: toque longo ────────────────────────────────────────────────────────
+function useLongPress(onLongPress, delay = 500) {
+  const timerRef = useRef(null);
+  const startPosRef = useRef(null);
+
+  const start = (e) => {
+    const touch = e.touches?.[0];
+    startPosRef.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
+    timerRef.current = setTimeout(() => {
+      if (navigator.vibrate) navigator.vibrate(40);
+      onLongPress();
+    }, delay);
+  };
+
+  const cancel = () => {
+    clearTimeout(timerRef.current);
+    timerRef.current = null;
+  };
+
+  const move = (e) => {
+    if (!startPosRef.current || !timerRef.current) return;
+    const touch = e.touches?.[0];
+    if (!touch) return;
+    const dx = touch.clientX - startPosRef.current.x;
+    const dy = touch.clientY - startPosRef.current.y;
+    if (Math.sqrt(dx * dx + dy * dy) > 10) cancel();
+  };
+
+  return {
+    onTouchStart: start,
+    onTouchEnd: cancel,
+    onTouchMove: move,
+    onTouchCancel: cancel,
+  };
+}
+
+// ─── Componente: botão de figurinha ──────────────────────────────────────────
+function StickerButton({ style, count, onAdd, onRemove, children }) {
+  const longPress = useLongPress(() => { if (count > 0) onRemove(); });
+
+  return (
+    <button
+      style={{ ...style, userSelect: 'none', WebkitTouchCallout: 'none' }}
+      onClick={e => { if (e.shiftKey && count > 0) onRemove(); else onAdd(); }}
+      onContextMenu={e => { e.preventDefault(); if (count > 0) onRemove(); }}
+      {...longPress}
+    >
+      {children}
+    </button>
+  );
+}
+
 // ─── Seções especiais ─────────────────────────────────────────────────────────
 const SPECIAL_SECTIONS = [
   {
@@ -609,7 +661,7 @@ export default function AlbumApp() {
             {collectionView === 'teams' && (
               <>
                 <div style={styles.helpBox}>
-                  <strong>Como usar:</strong> clique para adicionar. <kbd style={styles.kbd}>Shift</kbd> + clique ou botão direito para remover.
+                  <strong>Como usar:</strong> toque ou clique para adicionar. <strong>Toque longo</strong> (celular) para remover. No desktop: <kbd style={styles.kbd}>Shift</kbd> + clique ou botão direito.
                 </div>
                 <div style={styles.filterRow}>
                   <select value={filter.group} onChange={e => setFilter({ group: e.target.value, team: 'all' })} style={styles.select}>
@@ -641,14 +693,15 @@ export default function AlbumApp() {
                           const key = `${team.code}${num}`;
                           const count = collection[key] || 0;
                           return (
-                            <button key={num}
+                            <StickerButton key={num}
                               style={{ ...styles.stickerCell, ...(count > 0 ? styles.stickerOwned : {}), ...(count > 1 ? styles.stickerDuplicate : {}) }}
-                              onClick={e => { if (e.shiftKey && count > 0) removeOne(key); else addStickerByKey(key); }}
-                              onContextMenu={e => { e.preventDefault(); if (count > 0) removeOne(key); }}>
+                              count={count}
+                              onAdd={() => addStickerByKey(key)}
+                              onRemove={() => removeOne(key)}>
                               <span style={styles.stickerCode}>{team.code}</span>
                               <span style={styles.stickerNum}>{num}</span>
                               {count > 1 && <span style={styles.stickerBadge}>{count}</span>}
-                            </button>
+                            </StickerButton>
                           );
                         })}
                       </div>
@@ -661,7 +714,7 @@ export default function AlbumApp() {
             {collectionView === 'special' && (
               <>
                 <div style={styles.helpBox}>
-                  <strong>Figurinhas especiais:</strong> clique para marcar como coletada. Clique novamente para adicionar cópias.
+                  <strong>Figurinhas especiais:</strong> toque ou clique para adicionar. <strong>Toque longo</strong> (celular) para remover. No desktop: <kbd style={styles.kbd}>Shift</kbd> + clique ou botão direito.
                 </div>
                 {SPECIAL_SECTIONS.map(section => {
                   const owned = specialProgress(section);
@@ -681,13 +734,14 @@ export default function AlbumApp() {
                         {section.stickers.map(sticker => {
                           const count = collection[sticker.code] || 0;
                           return (
-                            <button key={sticker.code}
+                            <StickerButton key={sticker.code}
                               style={{ padding: '10px 16px', borderRadius: '8px', border: `2px solid ${count > 0 ? section.color : '#d4cdc0'}`, background: count > 0 ? section.color : 'transparent', color: count > 0 ? '#fff' : '#aaa', fontWeight: 700, fontSize: '14px', cursor: 'pointer', fontFamily: 'inherit', position: 'relative', transition: 'all 0.15s' }}
-                              onClick={e => { if (e.shiftKey && count > 0) removeOne(sticker.code); else addStickerByKey(sticker.code); }}
-                              onContextMenu={e => { e.preventDefault(); if (count > 0) removeOne(sticker.code); }}>
+                              count={count}
+                              onAdd={() => addStickerByKey(sticker.code)}
+                              onRemove={() => removeOne(sticker.code)}>
                               {sticker.label}
                               {count > 1 && <span style={{ ...styles.stickerBadge, background: '#1a1a1a' }}>{count}</span>}
-                            </button>
+                            </StickerButton>
                           );
                         })}
                       </div>
