@@ -181,6 +181,37 @@ const ALL_TEAMS = Object.entries(GROUPS).flatMap(([group, teams]) =>
   teams.map(t => ({ ...t, group }))
 );
 
+// ─── Mapa de código do álbum → ISO 3166-1 alpha-2 (flagcdn.com) ──────────────
+const FLAG_ISO = {
+  MEX: 'mx', RSA: 'za', KOR: 'kr', CZE: 'cz',
+  CAN: 'ca', BIH: 'ba', QAT: 'qa', SUI: 'ch',
+  BRA: 'br', MAR: 'ma', HAI: 'ht', SCO: 'gb-sct',
+  USA: 'us', PAR: 'py', AUS: 'au', TUR: 'tr',
+  GER: 'de', CUW: 'cw', CIV: 'ci', ECU: 'ec',
+  NED: 'nl', JPN: 'jp', SWE: 'se', TUN: 'tn',
+  BEL: 'be', EGY: 'eg', IRN: 'ir', NZL: 'nz',
+  ESP: 'es', CPV: 'cv', KSA: 'sa', URU: 'uy',
+  FRA: 'fr', SEN: 'sn', IRQ: 'iq', NOR: 'no',
+  ARG: 'ar', ALG: 'dz', AUT: 'at', JOR: 'jo',
+  POR: 'pt', COD: 'cd', UZB: 'uz', COL: 'co',
+  ENG: 'gb-eng', CRO: 'hr', GHA: 'gh', PAN: 'pa',
+};
+
+function FlagImg({ code, size = 32 }) {
+  const iso = FLAG_ISO[code];
+  if (!iso) return null;
+  return (
+    <img
+      src={`https://flagcdn.com/w${size * 2}/${iso}.png`}
+      width={size}
+      height={size * 0.67}
+      alt={code}
+      style={{ borderRadius: '3px', objectFit: 'cover', display: 'block' }}
+      onError={e => { e.target.style.display = 'none'; }}
+    />
+  );
+}
+
 const SPECIAL_TOTAL = SPECIAL_SECTIONS.reduce((acc, s) => acc + s.stickers.length, 0);
 const TOTAL_STICKERS = ALL_TEAMS.length * STICKERS_PER_TEAM + SPECIAL_TOTAL;
 
@@ -426,7 +457,6 @@ export default function AlbumApp() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
-    if (window.twemoji) twemoji.parse(document.body, { folder: 'svg', ext: '.svg' });
     return () => subscription.unsubscribe();
   }, []);
 
@@ -757,7 +787,7 @@ export default function AlbumApp() {
                     <div key={team.code} style={styles.teamCard}>
                       <div style={styles.teamHeader}>
                         <div style={styles.teamHeaderLeft}>
-                          <span style={styles.teamFlag}>{team.flag}</span>
+                          <FlagImg code={team.code} size={36} />
                           <div>
                             <div style={styles.teamName}>{team.name}</div>
                             <div style={styles.teamMeta}>Grupo {team.group} · {team.code}</div>
