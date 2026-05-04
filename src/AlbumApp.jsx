@@ -355,8 +355,11 @@ function AlbumSelector({ session, albums, onSelect, onCreateAlbum, onJoinAlbum, 
                 </button>
                 <button onClick={() => setConfirmDelete(album)}
                   title="Excluir álbum"
-                  style={{ padding: '10px 12px', background: 'transparent', border: '2px solid #fca5a5', borderRadius: '10px', cursor: 'pointer', color: '#c5331a', fontSize: '16px', flexShrink: 0 }}>
-                  🗑️
+                  style={{ padding: '0', width: '44px', height: '70px', background: '#fff0f0', border: '2px solid #fca5a5', borderRadius: '10px', cursor: 'pointer', color: '#c5331a', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3px', transition: 'all 0.15s' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c5331a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                  </svg>
+                  <span style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.3px', color: '#c5331a' }}>APAGAR</span>
                 </button>
               </div>
             ))}
@@ -603,7 +606,7 @@ export default function AlbumApp() {
     <AlbumSelector session={session} albums={albums} onSelect={selectAlbum}
       onCreateAlbum={async (album) => { await loadAlbums(); selectAlbum(album); }}
       onJoinAlbum={async (album) => { await loadAlbums(); selectAlbum(album); }}
-      onDeleteAlbum={async () => { await loadAlbums(); }}
+      onDeleteAlbum={async (deletedId) => { setAlbums(prev => prev.filter(a => a.id !== deletedId)); await loadAlbums(); }}
     />
   );
 
