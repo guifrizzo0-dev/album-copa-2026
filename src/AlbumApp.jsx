@@ -10,6 +10,7 @@ function useLongPress(onLongPress, delay = 500) {
   const startPosRef = useRef(null);
 
   const start = (e) => {
+    e.preventDefault();
     const touch = e.touches?.[0];
     startPosRef.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
     timerRef.current = setTimeout(() => {
@@ -747,7 +748,7 @@ export default function AlbumApp() {
                   </select>
                   <select value={filter.team} onChange={e => setFilter({ ...filter, team: e.target.value })} style={styles.select}>
                     <option value="all">Todas as seleções</option>
-                    {(filter.group === 'all' ? [...ALL_TEAMS] : [...GROUPS[filter.group]]).sort((a, b) => a.name.localeCompare(b.name, 'pt')).map(t => <option key={t.code} value={t.code}>{t.flag} {t.name}</option>)}
+                    {(filter.group === 'all' ? ALL_TEAMS : GROUPS[filter.group]).map(t => <option key={t.code} value={t.code}>{t.flag} {t.name}</option>)}
                   </select>
                 </div>
                 {filteredTeams.map(team => {
@@ -969,6 +970,8 @@ export default function AlbumApp() {
 const globalStyles = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap');
   * { box-sizing: border-box; }
+  * { -webkit-user-select: none; user-select: none; }
+  input, textarea { -webkit-user-select: text; user-select: text; }
   .spin { animation: spin 1s linear infinite; }
   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   input, select, button { font-family: inherit; }
