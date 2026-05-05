@@ -747,7 +747,7 @@ export default function AlbumApp() {
                   </select>
                   <select value={filter.team} onChange={e => setFilter({ ...filter, team: e.target.value })} style={styles.select}>
                     <option value="all">Todas as seleções</option>
-                    {(filter.group === 'all' ? ALL_TEAMS : GROUPS[filter.group]).map(t => <option key={t.code} value={t.code}>{t.flag} {t.name}</option>)}
+                    {(filter.group === 'all' ? [...ALL_TEAMS] : [...GROUPS[filter.group]]).sort((a, b) => a.name.localeCompare(b.name, 'pt')).map(t => <option key={t.code} value={t.code}>{t.flag} {t.name}</option>)}
                   </select>
                 </div>
                 {filteredTeams.map(team => {
