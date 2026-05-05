@@ -10,7 +10,6 @@ function useLongPress(onLongPress, delay = 500) {
   const startPosRef = useRef(null);
 
   const start = (e) => {
-    e.preventDefault();
     const touch = e.touches?.[0];
     startPosRef.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
     timerRef.current = setTimeout(() => {
@@ -43,12 +42,22 @@ function useLongPress(onLongPress, delay = 500) {
 
 // ─── Componente: botão de figurinha ──────────────────────────────────────────
 function StickerButton({ style, count, onAdd, onRemove, children }) {
-  const longPress = useLongPress(() => { if (count > 0) onRemove(); });
+  const didLongPress = useRef(false);
+
+  const longPress = useLongPress(() => {
+    if (count > 0) {
+      didLongPress.current = true;
+      onRemove();
+    }
+  });
 
   return (
     <button
       style={{ ...style, userSelect: 'none', WebkitTouchCallout: 'none' }}
-      onClick={e => { if (e.shiftKey && count > 0) onRemove(); else onAdd(); }}
+      onClick={e => {
+        if (didLongPress.current) { didLongPress.current = false; return; }
+        if (e.shiftKey && count > 0) onRemove(); else onAdd();
+      }}
       onContextMenu={e => { e.preventDefault(); if (count > 0) onRemove(); }}
       {...longPress}
     >
