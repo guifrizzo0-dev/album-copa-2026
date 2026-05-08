@@ -10,6 +10,7 @@ function useLongPress(onLongPress, delay = 500) {
   const startPosRef = useRef(null);
 
   const start = (e) => {
+    e.preventDefault();
     const touch = e.touches?.[0];
     startPosRef.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
     timerRef.current = setTimeout(() => {
@@ -42,22 +43,12 @@ function useLongPress(onLongPress, delay = 500) {
 
 // ─── Componente: botão de figurinha ──────────────────────────────────────────
 function StickerButton({ style, count, onAdd, onRemove, children }) {
-  const didLongPress = useRef(false);
-
-  const longPress = useLongPress(() => {
-    if (count > 0) {
-      didLongPress.current = true;
-      onRemove();
-    }
-  });
+  const longPress = useLongPress(() => { if (count > 0) onRemove(); });
 
   return (
     <button
       style={{ ...style, userSelect: 'none', WebkitTouchCallout: 'none' }}
-      onClick={e => {
-        if (didLongPress.current) { didLongPress.current = false; return; }
-        if (e.shiftKey && count > 0) onRemove(); else onAdd();
-      }}
+      onClick={e => { if (e.shiftKey && count > 0) onRemove(); else onAdd(); }}
       onContextMenu={e => { e.preventDefault(); if (count > 0) onRemove(); }}
       {...longPress}
     >
@@ -757,7 +748,9 @@ export default function AlbumApp() {
                   </select>
                   <select value={filter.team} onChange={e => setFilter({ ...filter, team: e.target.value })} style={styles.select}>
                     <option value="all">Todas as seleções</option>
-                    {(filter.group === 'all' ? ALL_TEAMS : GROUPS[filter.group]).map(t => <option key={t.code} value={t.code}>{t.flag} {t.name}</option>)}
+                    {(filter.group === 'all' ? [...ALL_TEAMS] : [...GROUPS[filter.group]])
+                      .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+                      .map(t => <option key={t.code} value={t.code}>{t.flag} {t.name}</option>)}
                   </select>
                 </div>
                 {filteredTeams.map(team => {
